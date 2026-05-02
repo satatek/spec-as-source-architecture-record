@@ -13,7 +13,7 @@ reviewers:
 release_refs:
   - none
 related_adrs:
-  - none
+  - ADR-0001
 related_rfps:
   - RFP-0001
 supersedes:
@@ -276,6 +276,110 @@ operational control, and team scalability over short-term trend alignment.
 - Centralize theming and brand assets rather than hardcoding branding into client applications.
 - Keep business logic shared wherever possible so white-label behavior stays configuration-driven.
 
+## Architecture Diagrams And Workflows
+
+This section translates the proposed platform into a visual structure and a concrete request flow so
+approvers can validate the operating model, tenant isolation path, and service interaction model.
+
+### High-Level Platform Diagram
+
+```mermaid
+flowchart LR
+  subgraph Clients
+    Web[Customer Web<br/>Angular]
+    Admin[Admin Console<br/>Angular]
+    Mobile[Mobile App<br/>Flutter]
+  end
+
+  Gateway[Kong API Gateway]
+  Identity[Keycloak]
+
+  subgraph Platform Services
+    Tenant[Tenant Configuration Service]
+    Branding[Branding and Theme Service]
+    Observability[OpenTelemetry and Monitoring]
+  end
+
+  subgraph Domain Services
+    Account[Account Service]
+    Catalog[Catalog Service]
+    Order[Order Service]
+    Notification[Notification Service]
+  end
+
+  Data[(PostgreSQL with RLS)]
+  Cache[(Redis)]
+
+  Web --> Gateway
+  Admin --> Gateway
+  Mobile --> Gateway
+  Gateway --> Identity
+  Gateway --> Tenant
+  Gateway --> Account
+  Gateway --> Catalog
+  Gateway --> Order
+  Gateway --> Notification
+  Tenant --> Data
+  Branding --> Data
+  Account --> Data
+  Catalog --> Data
+  Order --> Data
+  Notification --> Data
+  Account --> Cache
+  Catalog --> Cache
+  Order --> Cache
+  Notification --> Cache
+  Account -. telemetry .-> Observability
+  Catalog -. telemetry .-> Observability
+  Order -. telemetry .-> Observability
+  Notification -. telemetry .-> Observability
+```
+
+### Tenant-Aware Request Flow Diagram
+
+```mermaid
+sequenceDiagram
+  actor User
+  participant Client as Web or Mobile Client
+  participant Gateway as Kong API Gateway
+  participant IdP as Keycloak
+  participant Tenant as Tenant Configuration Service
+  participant Service as Domain Service
+  participant DB as PostgreSQL RLS
+
+  User->>Client: Sign in and open tenant workspace
+  Client->>Gateway: API request with access token
+  Gateway->>IdP: Validate token and roles
+  IdP-->>Gateway: Authenticated identity
+  Gateway->>Tenant: Resolve tenant from host, token, and route context
+  Tenant-->>Gateway: Tenant context and policy
+  Gateway->>Service: Forward request with identity and tenant headers
+  Service->>Service: Enforce authorization and business rules
+  Service->>DB: Set tenant context and query domain data
+  DB-->>Service: Return tenant-scoped rows only
+  Service-->>Gateway: Return response
+  Gateway-->>Client: Return tenant-safe payload
+  Client-->>User: Render branded experience
+```
+
+### Workflow 1: Authentication And Tenant Resolution
+
+1. The user signs in through Keycloak and the client receives an access token.
+2. The client sends the request to Kong together with the token and tenant-specific routing context.
+3. Kong validates identity, resolves tenant context, and forwards normalized identity and tenant metadata to downstream services.
+
+### Workflow 2: Domain Request Processing
+
+1. The selected domain service receives the request only after gateway policy checks succeed.
+2. The service applies business authorization using user identity, roles, and tenant scope.
+3. The service accesses PostgreSQL with tenant context bound to the session so Row-Level Security remains active.
+
+### Workflow 3: White-Label Configuration Delivery
+
+1. Client applications retrieve branding and tenant configuration through platform services.
+2. Theme assets, feature flags, and tenant settings remain configuration-driven rather than hardcoded.
+3. The same business services are reused across tenants while presentation and enabled capabilities vary by configuration.
+
 ## Infrastructure Tooling Recommendation
 
 ### Containerization
@@ -425,14 +529,14 @@ open-source operational practices.
 
 ## Related Artifacts
 
-- Related ADRs: None yet.
-- Related RFPs: [RFP-0001](./rfp-0001-initial-architecture.md)
-- Related diagrams: None yet.
+- Related ADRs: [ADR-0001](../../ADR/records/ADR-0001-modular-microservice-platform.md)
+- Related RFPs: [RFP-0001](./RFP-0001-multitenant-white-label-platform.md)
+- Related diagrams: Mermaid diagrams embedded in this RFP.
 - Related release manifests: None.
 
 ## Validation And Review Evidence
 
-- Review file: [RFP-0002 Review](../../reviews/rfp/rfp-0002-multitenant-white-label-platform-review.md)
+- Review file: [RFP-0001 Review](../../reviews/RFP/RFP-0001-multitenant-white-label-platform-review.md)
 - Review status: Pending human approval
 - Validation checks performed: Template-based drafting and repository-local editor validation.
 - Open validation items: Human review of technology choices, cost implications, and security constraints.

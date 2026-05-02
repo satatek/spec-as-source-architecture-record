@@ -6,12 +6,12 @@ ADR and RFP artifacts.
 ## Recommended Layout
 
 ```text
-adr/
+ADR/
 ├── records/                  # Canonical ADR documents
 ├── diagrams/                 # Diagrams referenced by ADRs
 └── templates/                # Optional ADR-specific helpers
 
-rfp/
+RFP/
 ├── deliverables/             # Canonical RFP documents
 ├── diagrams/                 # Diagrams referenced by RFPs
 └── templates/                # Optional RFP-specific helpers
@@ -21,13 +21,13 @@ releases/
 └── changelogs/               # Release summaries for changed document sets
 
 reviews/
-├── adr/                      # ADR review notes and approvals
-├── rfp/                      # RFP review notes and approvals
+├── ADR/                      # ADR review notes and approvals
+├── RFP/                      # RFP review notes and approvals
 └── releases/                 # Release-level validation and approval evidence
 
 templates/
-├── adr-template.md
-├── rfp-template.md
+├── ADR-template.md
+├── RFP-template.md
 └── release-manifest-template.md
 
 docs/
@@ -36,8 +36,8 @@ docs/
 
 ## Directory Rules
 
-- `adr/records/` is the single source of truth for ADR files.
-- `rfp/deliverables/` is the single source of truth for RFP files.
+- `ADR/records/` is the single source of truth for ADR files.
+- `RFP/deliverables/` is the single source of truth for RFP files.
 - `releases/manifests/` links a release to the ADRs and RFPs governed by that release.
 - `reviews/` stores validation evidence and approval notes rather than mixing them into source artifacts.
 - `templates/` holds reusable authoring templates shared across contributors.
@@ -45,8 +45,8 @@ docs/
 
 ## Suggested File Naming
 
-- ADR: `adr-0001-short-title.md`
-- RFP: `rfp-0001-short-title.md`
+- ADR: `ADR-0001-short-title.md`
+- RFP: `RFP-0001-short-title.md`
 - Release manifest: `v0.1.0.md`
 - Release changelog: `v0.1.0.md`
 
